@@ -214,6 +214,39 @@ textarea::placeholder {
 	border-radius: 4px;
 }
 
+.person-actions {
+	display: flex;
+	justify-content: flex-end;
+	gap: 8px;
+	margin: -4px 0 18px;
+}
+
+.person-actions button {
+	min-height: 40px;
+	margin-top: 0;
+	padding: 0 14px;
+	font-size: 0.85rem;
+}
+
+.secondary-button {
+	color: #087f8c;
+	background: #d8f0ed;
+}
+
+.secondary-button:hover:not(:disabled) {
+	color: #ffffff;
+	background: #087f8c;
+}
+
+.save-button {
+	color: #ffffff;
+	background: #1f9d78;
+}
+
+.save-button:hover:not(:disabled) {
+	background: #147b5d;
+}
+
 input:focus,
 select:focus,
 textarea:focus {
@@ -311,5 +344,14 @@ button:disabled {
 
 	.search-button {
 		width: 100%;
+	}
+
+	.person-actions {
+		justify-content: stretch;
+		flex-wrap: wrap;
+	}
+
+	.person-actions button {
+		flex: 1;
 	}
 }

@@ -47,7 +47,10 @@ export class ReclamoFormComponent implements OnInit {
   buscandoPersona = false;
   personaEncontrada = false;
   personaNoEncontrada = false;
+  editandoPersona = false;
+  guardandoPersona = false;
   mensajeBusqueda: string | null = null;
+  private personaOriginal: Persona | null = null;
   private temporizadorBusqueda?: ReturnType<typeof setTimeout>;
 
   constructor(private fb: FormBuilder, private http: HttpClient, private cdr: ChangeDetectorRef) {}
@@ -99,11 +102,13 @@ export class ReclamoFormComponent implements OnInit {
       next: (response) => {
         if (response.data) {
           this.reclamoForm.patchValue(response.data);
+          this.personaOriginal = response.data;
           this.personaEncontrada = true;
           this.setCamposPersonaHabilitados(false);
           this.mensajeBusqueda = 'Persona encontrada. Verifica los datos cargados.';
         } else {
           this.personaNoEncontrada = true;
+          this.limpiarDatosPersona();
           this.setCamposPersonaHabilitados(true);
           this.mensajeBusqueda = 'No encontramos a la persona. Completa sus datos para continuar.';
         }
@@ -132,6 +137,8 @@ export class ReclamoFormComponent implements OnInit {
   private limpiarEstadoBusqueda(): void {
     if (this.personaEncontrada) {
       this.personaEncontrada = false;
+      this.editandoPersona = false;
+      this.personaOriginal = null;
       this.setCamposPersonaHabilitados(true);
     }
     this.personaNoEncontrada = false;
@@ -148,6 +155,85 @@ export class ReclamoFormComponent implements OnInit {
           control?.disable({ emitEvent: false });
         }
       });
+  }
+
+  private limpiarDatosPersona(): void {
+    this.reclamoForm.patchValue({
+      nombre_completo: '',
+      domicilio: '',
+      referencia: '',
+      correo: '',
+      telefono: '',
+      fecha_nacimiento: '',
+    }, { emitEvent: false });
+    this.personaOriginal = null;
+    this.editandoPersona = false;
+  }
+
+  editarPersona(): void {
+    if (!this.personaEncontrada) {
+      return;
+    }
+
+    this.editandoPersona = true;
+    this.setCamposPersonaHabilitados(true);
+  }
+
+  cancelarEdicionPersona(): void {
+    if (this.personaOriginal) {
+      this.reclamoForm.patchValue(this.personaOriginal);
+    }
+
+    this.editandoPersona = false;
+    this.setCamposPersonaHabilitados(false);
+    this.mensajeBusqueda = 'Se descartaron los cambios de la persona.';
+  }
+
+  guardarPersona(): void {
+    if (!this.personaEncontrada || !this.editandoPersona || this.guardandoPersona) {
+      return;
+    }
+
+    const persona = this.reclamoForm.getRawValue() as Persona;
+    const datosPersona = {
+      tipo_documento: persona.tipo_documento,
+      nombre_completo: persona.nombre_completo,
+      domicilio: persona.domicilio,
+      referencia: persona.referencia,
+      correo: persona.correo,
+      telefono: persona.telefono,
+      fecha_nacimiento: persona.fecha_nacimiento,
+    };
+
+    if (!datosPersona.nombre_completo) {
+      this.reclamoForm.get('nombre_completo')?.markAsTouched();
+      return;
+    }
+
+    this.guardandoPersona = true;
+    this.http.put<{ status: string; data: Persona }>(
+      `${this.apiBaseUrl}/personas/${encodeURIComponent(persona.n_documento)}`,
+      datosPersona
+    ).pipe(
+      timeout(5000),
+      finalize(() => {
+        this.guardandoPersona = false;
+        this.cdr.detectChanges();
+      })
+    ).subscribe({
+      next: (response) => {
+        this.personaOriginal = response.data;
+        this.reclamoForm.patchValue(response.data);
+        this.editandoPersona = false;
+        this.setCamposPersonaHabilitados(false);
+        this.mensajeBusqueda = 'Los datos de la persona fueron actualizados correctamente.';
+      },
+      error: (err) => {
+        this.mensajeBusqueda = err.name === 'TimeoutError'
+          ? 'La actualización tardó demasiado. Inténtalo nuevamente.'
+          : err.error?.message || 'No se pudieron actualizar los datos de la persona.';
+      }
+    });
   }
 
   cargarEstablecimientos(): void {
