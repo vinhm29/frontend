@@ -1,8 +1,9 @@
 import { Component, signal } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { ReclamoFormComponent } from './reclamo-form/reclamo-form';
 
 @Component({
-  imports: [RouterOutlet],
+  imports: [RouterOutlet, ReclamoFormComponent],
   selector: 'app-root',
   styleUrl: './app.css',
   templateUrl: './app.html',

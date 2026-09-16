@@ -1,0 +1,130 @@
+<main class="complaint-page">
+  <section class="complaint-card" aria-labelledby="page-title">
+    <header class="form-header">
+      <p class="eyebrow">Atención al consumidor</p>
+      <h1 id="page-title">Libro de Reclamaciones Virtual</h1>
+      <p class="intro">Completa tus datos y cuéntanos lo ocurrido. Los campos marcados con <span aria-hidden="true">*</span> son obligatorios.</p>
+    </header>
+
+    <div *ngIf="mensajeExito" class="status-message success" role="status">
+      <strong>¡Reclamo registrado!</strong>
+      <span>{{ mensajeExito }}</span>
+      <span class="tracking-code">Código de seguimiento: <b>{{ correlativoGenerado }}</b></span>
+    </div>
+    
+    <div *ngIf="mensajeError" class="status-message error" role="alert">
+      <strong>No pudimos registrar tu reclamo</strong>
+      <span>{{ mensajeError }}</span>
+    </div>
+
+    <form [formGroup]="reclamoForm" (ngSubmit)="enviarReclamo()">
+      <fieldset>
+        <legend><span>01</span> Identificación del consumidor</legend>
+        <p class="section-help">Usaremos esta información para identificarte y responderte.</p>
+
+        <div class="form-grid document-grid">
+          <div class="field">
+            <label for="tipo_documento">Tipo de documento <span aria-hidden="true">*</span></label>
+            <select id="tipo_documento" formControlName="tipo_documento">
+              <option value="DNI">DNI</option>
+              <option value="CE">C.E.</option>
+              <option value="PASAPORTE">Pasaporte</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="n_documento">Número de documento <span aria-hidden="true">*</span></label>
+            <input id="n_documento" type="text" formControlName="n_documento" placeholder="Ej. 77665544">
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="nombre_completo">Nombre completo <span aria-hidden="true">*</span></label>
+          <input id="nombre_completo" type="text" formControlName="nombre_completo">
+        </div>
+
+        <div class="form-grid">
+          <div class="field">
+            <label for="correo">Correo electrónico</label>
+            <input id="correo" type="email" formControlName="correo" placeholder="ejemplo@correo.com">
+          </div>
+          <div class="field">
+            <label for="telefono">Teléfono o celular</label>
+            <input id="telefono" type="tel" formControlName="telefono" placeholder="Máx. 9 dígitos">
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="domicilio">Domicilio actual</label>
+          <input id="domicilio" type="text" formControlName="domicilio">
+        </div>
+
+        <div class="form-grid address-grid">
+          <div class="field">
+            <label for="referencia">Referencia</label>
+            <input id="referencia" type="text" formControlName="referencia" placeholder="Ej. Frente al parque">
+          </div>
+          <div class="field">
+            <label for="fecha_nacimiento">Fecha de nacimiento</label>
+            <input id="fecha_nacimiento" type="date" formControlName="fecha_nacimiento">
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend><span>02</span> Detalle de la reclamación</legend>
+        <p class="section-help">Bríndanos los datos del establecimiento y describe tu caso con claridad.</p>
+
+        <div class="form-grid">
+          <div class="field">
+            <label for="n_establecimiento">Establecimiento <span aria-hidden="true">*</span></label>
+            <select id="n_establecimiento" formControlName="n_establecimiento">
+              <option value="" disabled>
+                {{ cargandoEstablecimientos ? 'Cargando establecimientos...' : 'Selecciona un establecimiento' }}
+              </option>
+              <option *ngFor="let establecimiento of establecimientos" [value]="establecimiento.cod_establecimiento">
+                {{ establecimiento.nombre }} ({{ establecimiento.cod_establecimiento }})
+              </option>
+            </select>
+            <small *ngIf="!cargandoEstablecimientos && establecimientos.length === 0" class="field-message">
+              No hay establecimientos activos disponibles.
+            </small>
+          </div>
+          <div class="field">
+            <label for="id_clasif">Código de clasificación <span aria-hidden="true">*</span></label>
+            <select id="id_clasif" formControlName="id_clasif">
+              <option value="" disabled>
+                {{ cargandoClasificaciones ? 'Cargando códigos...' : 'Selecciona un código' }}
+              </option>
+              <option *ngFor="let clasificacion of clasificaciones" [value]="clasificacion.codigo">
+                {{ clasificacion.codigo }} - {{ clasificacion.descripcion }}
+              </option>
+            </select>
+            <small *ngIf="!cargandoClasificaciones && clasificaciones.length === 0" class="field-message">
+              No hay códigos de clasificación activos disponibles.
+            </small>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="notif_correo">¿Autorizas la notificación por correo electrónico? <span aria-hidden="true">*</span></label>
+          <select id="notif_correo" formControlName="notif_correo">
+            <option value="SI">Sí, autorizo</option>
+            <option value="NO">No, prefiero notificación física</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="detalle_reclamo">Detalle del reclamo o queja</label>
+          <textarea id="detalle_reclamo" formControlName="detalle_reclamo" rows="6" placeholder="Describe detalladamente los hechos, indicando fechas y lugares cuando sea posible."></textarea>
+        </div>
+      </fieldset>
+
+      <div class="form-footer">
+        <p class="privacy-note">Al enviar, la información será remitida para la atención de tu reclamo.</p>
+        <button type="submit" [disabled]="reclamoForm.invalid || enviandoReclamo">
+          {{ enviandoReclamo ? 'Registrando...' : 'Registrar reclamación' }} <span aria-hidden="true">→</span>
+        </button>
+      </div>
+    </form>
+  </section>
+</main>
