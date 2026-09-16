@@ -1,0 +1,68 @@
+<main class="admin-page">
+  <section class="admin-header">
+    <div>
+      <p class="eyebrow">Panel interno</p>
+      <h1>Gestión de reclamos</h1>
+      <p>Consulta los casos recibidos y registra la respuesta oficial.</p>
+    </div>
+    <button type="button" class="refresh-button" (click)="cargarDatos()" [disabled]="cargando">Actualizar</button>
+  </section>
+
+  <div *ngIf="mensaje" class="notice success" role="status">{{ mensaje }}</div>
+  <div *ngIf="error" class="notice error" role="alert">{{ error }}</div>
+
+  <section class="admin-content">
+    <div class="toolbar">
+      <label for="filtro">Buscar reclamo</label>
+      <input id="filtro" type="search" [(ngModel)]="filtro" (ngModelChange)="aplicarFiltro()" placeholder="Correlativo, documento o persona">
+    </div>
+
+    <div *ngIf="cargando" class="empty-state">Cargando reclamos...</div>
+    <div *ngIf="!cargando && reclamosFiltrados.length === 0" class="empty-state">No hay reclamos que mostrar.</div>
+
+    <div class="claims-list" *ngIf="!cargando && reclamosFiltrados.length > 0">
+      <article class="claim-row" *ngFor="let reclamo of reclamosFiltrados">
+        <div class="claim-main">
+          <div class="claim-title">
+            <strong>{{ reclamo.correlativo }}</strong>
+            <span [class.closed]="!reclamo.activo">{{ reclamo.activo ? 'Pendiente' : 'Atendido' }}</span>
+          </div>
+          <h2>{{ reclamo.persona?.nombre_completo || reclamo.doc_afectado }}</h2>
+          <p>{{ reclamo.detalle_reclamo || 'Sin detalle registrado.' }}</p>
+          <small>{{ reclamo.establecimiento?.nombre || reclamo.n_establecimiento }} · {{ reclamo.clasificacion?.descripcion || reclamo.id_clasif }}</small>
+        </div>
+        <button type="button" class="respond-button" [disabled]="!reclamo.activo || !!reclamo.respuesta" (click)="seleccionarReclamo(reclamo)">
+          {{ reclamo.respuesta ? 'Respuesta registrada' : reclamo.activo ? 'Brindar respuesta' : 'Caso cerrado' }}
+        </button>
+      </article>
+    </div>
+  </section>
+
+  <div *ngIf="reclamoSeleccionado" class="modal-backdrop" (click)="cerrarRespuesta()">
+    <section class="response-modal" role="dialog" aria-modal="true" aria-labelledby="response-title" (click)="$event.stopPropagation()">
+      <div class="modal-heading">
+        <div>
+          <p class="eyebrow">{{ reclamoSeleccionado.correlativo }}</p>
+          <h2 id="response-title">Respuesta oficial</h2>
+        </div>
+        <button type="button" class="close-button" (click)="cerrarRespuesta()" aria-label="Cerrar">×</button>
+      </div>
+      <p class="recipient">{{ reclamoSeleccionado.persona?.nombre_completo }} · {{ reclamoSeleccionado.persona?.correo || 'Sin correo registrado' }}</p>
+      <form [formGroup]="respuestaForm" (ngSubmit)="responder()">
+        <label for="observaciones">Observaciones de la respuesta *</label>
+        <textarea id="observaciones" formControlName="observaciones" rows="5"></textarea>
+        <div class="form-grid">
+          <div><label for="id_clasif_resp">Clasificación *</label><select id="id_clasif_resp" formControlName="id_clasif_resp"><option value="">Selecciona</option><option *ngFor="let item of clasificaciones" [value]="item.id_clasif_resp">{{ item.descripcion }}</option></select></div>
+          <div><label for="id_estado_reclamo">Estado *</label><select id="id_estado_reclamo" formControlName="id_estado_reclamo"><option value="">Selecciona</option><option *ngFor="let item of estados" [value]="item.id_estado_reclamo">{{ item.nombre_estado }}</option></select></div>
+        </div>
+        <div class="form-grid">
+          <div><label for="canal_notif">Canal de notificación *</label><select id="canal_notif" formControlName="canal_notif"><option value="CORREO">Correo</option><option value="DOMICILIO">Domicilio</option><option value="TELEFONO">Teléfono</option></select></div>
+          <div><label for="fecha_notif">Fecha de notificación *</label><input id="fecha_notif" type="datetime-local" formControlName="fecha_notif"></div>
+        </div>
+        <label for="archivo_adjunto">Archivo adjunto o ruta del documento *</label>
+        <input id="archivo_adjunto" type="text" formControlName="archivo_adjunto" placeholder="documentos/respuesta-001.pdf">
+        <div class="modal-actions"><button type="button" class="cancel-button" (click)="cerrarRespuesta()">Cancelar</button><button type="submit" class="save-button" [disabled]="enviando || respuestaForm.invalid">{{ enviando ? 'Registrando...' : 'Registrar respuesta' }}</button></div>
+      </form>
+    </section>
+  </div>
+</main>

@@ -12,7 +12,6 @@ describe('ReclamoFormComponent', () => {
 
     fixture = TestBed.createComponent(ReclamoFormComponent);
     component = fixture.componentInstance;
-    await fixture.whenStable();
   });
 
   it('should create', () => {
