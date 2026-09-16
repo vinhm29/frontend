@@ -137,6 +137,16 @@ legend span {
 	grid-template-columns: minmax(150px, 0.8fr) 1.5fr;
 }
 
+.document-number-field {
+	min-width: 0;
+}
+
+.document-search {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto;
+	gap: 8px;
+}
+
 .field {
 	display: grid;
 	gap: 7px;
@@ -188,6 +198,22 @@ textarea::placeholder {
 	font-size: 0.82rem;
 }
 
+.lookup-message {
+	margin: -8px 0 18px;
+}
+
+.lookup-success {
+	color: #145c50;
+}
+
+.lookup-not-found {
+	padding: 10px 12px;
+	color: #7a4b09;
+	background: #fff7df;
+	border-left: 3px solid #d79b28;
+	border-radius: 4px;
+}
+
 input:focus,
 select:focus,
 textarea:focus {
@@ -223,6 +249,20 @@ button {
 	font-weight: 800;
 	cursor: pointer;
 	transition: background 160ms ease, transform 160ms ease;
+}
+
+.search-button {
+	min-height: 46px;
+	margin-top: 0;
+	padding: 0 14px;
+	color: #087f8c;
+	background: #d8f0ed;
+	font-size: 0.86rem;
+}
+
+.search-button:hover:not(:disabled) {
+	color: #ffffff;
+	background: #087f8c;
 }
 
 button:hover:not(:disabled) {
@@ -262,6 +302,14 @@ button:disabled {
 	}
 
 	button {
+		width: 100%;
+	}
+
+	.document-search {
+		grid-template-columns: 1fr;
+	}
+
+	.search-button {
 		width: 100%;
 	}
 }

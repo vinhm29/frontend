@@ -31,11 +31,20 @@
               <option value="PASAPORTE">Pasaporte</option>
             </select>
           </div>
-          <div class="field">
+          <div class="field document-number-field">
             <label for="n_documento">Número de documento <span aria-hidden="true">*</span></label>
-            <input id="n_documento" type="text" formControlName="n_documento" placeholder="Ej. 77665544">
+            <div class="document-search">
+              <input id="n_documento" type="text" formControlName="n_documento" placeholder="Ej. 77665544">
+              <button type="button" class="search-button" (click)="buscarPersona()" [disabled]="buscandoPersona">
+                {{ buscandoPersona ? 'Buscando...' : 'Buscar persona' }}
+              </button>
+            </div>
           </div>
         </div>
+
+        <p *ngIf="mensajeBusqueda" class="field-message lookup-message" [class.lookup-success]="personaEncontrada" [class.lookup-not-found]="personaNoEncontrada" role="status" aria-live="polite">
+          {{ mensajeBusqueda }}
+        </p>
 
         <div class="field">
           <label for="nombre_completo">Nombre completo <span aria-hidden="true">*</span></label>

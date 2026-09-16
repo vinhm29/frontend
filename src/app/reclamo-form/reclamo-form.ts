@@ -1,7 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
-import { HttpClient, HttpClientModule } from '@angular/common/http';
+import { HttpClient, HttpClientModule, HttpParams } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
+import { catchError, finalize, of, throwError, timeout } from 'rxjs';
 
 interface Establecimiento {
   cod_establecimiento: string;
@@ -12,6 +13,17 @@ interface Establecimiento {
 interface Clasificacion {
   codigo: string;
   descripcion: string;
+}
+
+interface Persona {
+  n_documento: string;
+  tipo_documento: string;
+  nombre_completo: string;
+  domicilio?: string | null;
+  referencia?: string | null;
+  correo?: string | null;
+  telefono?: string | null;
+  fecha_nacimiento?: string | null;
 }
 
 @Component({
@@ -32,13 +44,110 @@ export class ReclamoFormComponent implements OnInit {
   mensajeError: string | null = null;
   correlativoGenerado: string | null = null;
   enviandoReclamo = false;
+  buscandoPersona = false;
+  personaEncontrada = false;
+  personaNoEncontrada = false;
+  mensajeBusqueda: string | null = null;
+  private temporizadorBusqueda?: ReturnType<typeof setTimeout>;
 
-  constructor(private fb: FormBuilder, private http: HttpClient) {}
+  constructor(private fb: FormBuilder, private http: HttpClient, private cdr: ChangeDetectorRef) {}
 
   ngOnInit(): void {
     this.initForm();
+    this.reclamoForm.get('tipo_documento')?.valueChanges.subscribe(() => this.limpiarEstadoBusqueda());
+    this.reclamoForm.get('n_documento')?.valueChanges.subscribe(() => this.limpiarEstadoBusqueda());
     this.cargarEstablecimientos();
     this.cargarClasificaciones();
+  }
+
+  buscarPersona(): void {
+    const tipoDocumento = this.reclamoForm.get('tipo_documento')?.value;
+    const numeroDocumento = this.reclamoForm.get('n_documento')?.value?.trim();
+    const documentoControl = this.reclamoForm.get('n_documento');
+
+    if (!tipoDocumento || !numeroDocumento || documentoControl?.invalid) {
+      documentoControl?.markAsTouched();
+      this.mensajeBusqueda = 'Ingresa un número de documento válido para buscar.';
+      return;
+    }
+
+    this.buscandoPersona = true;
+    this.personaEncontrada = false;
+    this.personaNoEncontrada = false;
+    this.mensajeBusqueda = null;
+    this.temporizadorBusqueda = setTimeout(() => {
+      if (this.buscandoPersona) {
+        this.mensajeBusqueda = 'No se pudo completar la búsqueda. Verifica el documento e inténtalo nuevamente.';
+        this.finalizarBusquedaPersona();
+      }
+    }, 5500);
+    const params = new HttpParams()
+      .set('tipo_documento', tipoDocumento)
+      .set('n_documento', numeroDocumento);
+
+    this.http.get<{ status: string; data?: Persona | null }>(`${this.apiBaseUrl}/personas/buscar`, { params }).pipe(
+      timeout(5000),
+      catchError((err) => {
+        if (err.status === 404) {
+          return of({ status: 'not_found', data: null });
+        }
+
+        return throwError(() => err);
+      }),
+      finalize(() => this.buscandoPersona = false)
+    ).subscribe({
+      next: (response) => {
+        if (response.data) {
+          this.reclamoForm.patchValue(response.data);
+          this.personaEncontrada = true;
+          this.setCamposPersonaHabilitados(false);
+          this.mensajeBusqueda = 'Persona encontrada. Verifica los datos cargados.';
+        } else {
+          this.personaNoEncontrada = true;
+          this.setCamposPersonaHabilitados(true);
+          this.mensajeBusqueda = 'No encontramos a la persona. Completa sus datos para continuar.';
+        }
+        this.finalizarBusquedaPersona();
+      },
+      error: (err) => {
+        this.personaNoEncontrada = false;
+        this.setCamposPersonaHabilitados(true);
+        this.mensajeBusqueda = err.name === 'TimeoutError'
+          ? 'La búsqueda tardó demasiado. Verifica la conexión e inténtalo nuevamente.'
+          : 'No se pudo consultar la base de datos. Inténtalo nuevamente.';
+        this.finalizarBusquedaPersona();
+      }
+    });
+  }
+
+  private finalizarBusquedaPersona(): void {
+    this.buscandoPersona = false;
+    if (this.temporizadorBusqueda) {
+      clearTimeout(this.temporizadorBusqueda);
+      this.temporizadorBusqueda = undefined;
+    }
+    this.cdr.detectChanges();
+  }
+
+  private limpiarEstadoBusqueda(): void {
+    if (this.personaEncontrada) {
+      this.personaEncontrada = false;
+      this.setCamposPersonaHabilitados(true);
+    }
+    this.personaNoEncontrada = false;
+    this.mensajeBusqueda = null;
+  }
+
+  private setCamposPersonaHabilitados(habilitados: boolean): void {
+    ['nombre_completo', 'domicilio', 'referencia', 'correo', 'telefono', 'fecha_nacimiento']
+      .forEach((campo) => {
+        const control = this.reclamoForm.get(campo);
+        if (habilitados) {
+          control?.enable({ emitEvent: false });
+        } else {
+          control?.disable({ emitEvent: false });
+        }
+      });
   }
 
   cargarEstablecimientos(): void {
@@ -102,7 +211,7 @@ export class ReclamoFormComponent implements OnInit {
     this.enviandoReclamo = true;
 
     // Enviar todo el paquete JSON directo a tu API en Laravel
-    this.http.post<any>(`${this.apiBaseUrl}/reclamos`, this.reclamoForm.value).subscribe({
+    this.http.post<any>(`${this.apiBaseUrl}/reclamos`, this.reclamoForm.getRawValue()).subscribe({
       next: (response) => {
         if (response.status === 'success') {
           this.mensajeExito = response.message;
