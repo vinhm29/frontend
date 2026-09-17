@@ -25,14 +25,14 @@
         <div class="claim-main">
           <div class="claim-title">
             <strong>{{ reclamo.correlativo }}</strong>
-            <span [class.closed]="!reclamo.activo">{{ reclamo.activo ? 'Pendiente' : 'Atendido' }}</span>
+            <span [class.closed]="!reclamo.activo">{{ reclamo.activo ? (reclamo.respuesta ? 'En evaluación' : 'Pendiente') : 'Atendido' }}</span>
           </div>
           <h2>{{ reclamo.persona?.nombre_completo || reclamo.doc_afectado }}</h2>
           <p>{{ reclamo.detalle_reclamo || 'Sin detalle registrado.' }}</p>
           <small>{{ reclamo.establecimiento?.nombre || reclamo.n_establecimiento }} · {{ reclamo.clasificacion?.descripcion || reclamo.id_clasif }}</small>
         </div>
-        <button type="button" class="respond-button" [disabled]="!reclamo.activo || !!reclamo.respuesta" (click)="seleccionarReclamo(reclamo)">
-          {{ reclamo.respuesta ? 'Respuesta registrada' : reclamo.activo ? 'Brindar respuesta' : 'Caso cerrado' }}
+        <button type="button" class="respond-button" [disabled]="!reclamo.activo || !puedeContinuarRespuesta(reclamo)" (click)="seleccionarReclamo(reclamo)">
+          {{ reclamo.respuesta ? (reclamo.activo ? 'Registrar respuesta final' : 'Respuesta registrada') : reclamo.activo ? 'Brindar respuesta' : 'Caso cerrado' }}
         </button>
       </article>
     </div>
@@ -52,15 +52,19 @@
         <label for="observaciones">Observaciones de la respuesta *</label>
         <textarea id="observaciones" formControlName="observaciones" rows="5"></textarea>
         <div class="form-grid">
-          <div><label for="id_clasif_resp">Clasificación *</label><select id="id_clasif_resp" formControlName="id_clasif_resp"><option value="">Selecciona</option><option *ngFor="let item of clasificaciones" [value]="item.id_clasif_resp">{{ item.descripcion }}</option></select></div>
+          <div><label for="id_clasif_resp">Clasificación <span *ngIf="!esEstadoEvaluacion()">*</span></label><select id="id_clasif_resp" formControlName="id_clasif_resp"><option value="">Selecciona</option><option *ngFor="let item of clasificaciones" [value]="item.id_clasif_resp">{{ item.descripcion }}</option></select></div>
           <div><label for="id_estado_reclamo">Estado *</label><select id="id_estado_reclamo" formControlName="id_estado_reclamo"><option value="">Selecciona</option><option *ngFor="let item of estados" [value]="item.id_estado_reclamo">{{ item.nombre_estado }}</option></select></div>
         </div>
         <div class="form-grid">
-          <div><label for="canal_notif">Canal de notificación *</label><select id="canal_notif" formControlName="canal_notif"><option value="CORREO">Correo</option><option value="DOMICILIO">Domicilio</option><option value="TELEFONO">Teléfono</option></select></div>
+          <div><label for="canal_notif">Canal de notificación <span *ngIf="!esEstadoEvaluacion()">*</span></label><select id="canal_notif" formControlName="canal_notif"><option value="CORREO">Correo</option><option value="DOMICILIO">Domicilio</option><option value="TELEFONO">Teléfono</option></select></div>
           <div><label for="fecha_notif">Fecha de notificación *</label><input id="fecha_notif" type="datetime-local" formControlName="fecha_notif"></div>
         </div>
-        <label for="archivo_adjunto">Archivo adjunto o ruta del documento *</label>
-        <input id="archivo_adjunto" type="text" formControlName="archivo_adjunto" placeholder="documentos/respuesta-001.pdf">
+        <label for="archivo_adjunto">Archivo adjunto <span *ngIf="!esEstadoEvaluacion()">*</span></label>
+        <input #archivoInput id="archivo_adjunto" type="file" accept=".pdf,.doc,.docx" (change)="seleccionarArchivo($event)">
+        <div *ngIf="respuestaForm.get('archivo_adjunto')?.value as archivo" class="selected-file">
+          <span>{{ archivo.name }}</span>
+          <button type="button" class="remove-file-button" (click)="quitarArchivo(archivoInput)" aria-label="Quitar archivo adjunto">×</button>
+        </div>
         <div class="modal-actions"><button type="button" class="cancel-button" (click)="cerrarRespuesta()">Cancelar</button><button type="submit" class="save-button" [disabled]="enviando || respuestaForm.invalid">{{ enviando ? 'Registrando...' : 'Registrar respuesta' }}</button></div>
       </form>
     </section>

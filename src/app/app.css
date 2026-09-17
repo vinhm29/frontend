@@ -28,6 +28,21 @@
 	color: #8fe0d1;
 }
 
+.logout-button {
+	padding: 0;
+	border: 0;
+	color: #dceff0;
+	background: transparent;
+	font: inherit;
+	font-size: 0.9rem;
+	font-weight: 700;
+	cursor: pointer;
+}
+
+.logout-button:hover {
+	color: #8fe0d1;
+}
+
 @media (max-width: 600px) {
 	.site-nav {
 		align-items: flex-start;

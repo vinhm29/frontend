@@ -3,6 +3,7 @@
 	<nav aria-label="Navegación principal">
 		<a routerLink="/">Formulario público</a>
 		<a routerLink="/admin">Administración</a>
+		<button *ngIf="auth.estaAutenticado()" type="button" class="logout-button" (click)="auth.cerrarSesion()">Cerrar sesión</button>
 	</nav>
 </header>
 
