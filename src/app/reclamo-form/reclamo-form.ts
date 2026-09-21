@@ -243,10 +243,12 @@ export class ReclamoFormComponent implements OnInit {
       next: (response) => {
         this.establecimientos = response.data;
         this.cargandoEstablecimientos = false;
+        this.cdr.detectChanges();
       },
       error: () => {
         this.mensajeError = 'No se pudieron cargar los establecimientos disponibles.';
         this.cargandoEstablecimientos = false;
+        this.cdr.detectChanges();
       }
     });
   }
@@ -258,10 +260,12 @@ export class ReclamoFormComponent implements OnInit {
       next: (response) => {
         this.clasificaciones = response.data;
         this.cargandoClasificaciones = false;
+        this.cdr.detectChanges();
       },
       error: () => {
         this.mensajeError = 'No se pudieron cargar los códigos de clasificación disponibles.';
         this.cargandoClasificaciones = false;
+        this.cdr.detectChanges();
       }
     });
   }
